@@ -5,6 +5,7 @@ from google.adk.tools.mcp_tool.mcp_session_manager import (
     StdioConnectionParams,
     StdioServerParameters,
 )
+from ..config import create_agent
 
 server_path = os.path.join(
     os.path.dirname(os.path.dirname(__file__)),
@@ -21,26 +22,21 @@ health_tools = McpToolset(
     )
 )
 
-step_agent = Agent(
+step_agent = create_agent(
     name="step_agent",
-    model="gemini-2.5-flash",
+    description="Tracks daily step count — add, get, or reset steps.",
     instruction="""
 You are a fitness tracker.
-
-Use MCP tool:
-- manage_steps
-
-When the user mentions walking, steps, pedometer, movement, or activity:
-- If they are adding steps, call manage_steps with action="add" and value as the number of steps.
-- If they are asking for current step total, call manage_steps with action="get".
-- Do NOT invent step totals yourself.
-
+ 
+Use MCP tool `manage_steps` when the user mentions walking, steps, pedometer, or movement:
+- Adding steps  → manage_steps(action="add", value=<number>)
+- Checking total → manage_steps(action="get")
+- Resetting      → manage_steps(action="reset")
+- DO NOT invent step totals yourself.
+ 
 Examples:
-User: "I walked 5000 steps"
-Action: call manage_steps with action="add", value=5000
-
-User: "How many steps have I done today?"
-Action: call manage_steps with action="get"
+User: "I walked 5000 steps"  → manage_steps(action="add", value=5000)
+User: "How many steps today?" → manage_steps(action="get")
 """,
     tools=[health_tools],
 )

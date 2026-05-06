@@ -1,11 +1,50 @@
+import os
 from google.adk import Agent
 from .calorie_agent.agent import calorie_agent
 from .recipe_agent.agent import recipe_agent
 from .step_agent.agent import step_agent
+from .config import DEFAULT_MODEL
+from google.adk.tools.mcp_tool.mcp_session_manager import (
+    StdioConnectionParams,
+    StdioServerParameters,
+)
+from .config import create_agent
+from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
+
+# ── MCP Server Paths ──────────────────────────────────────────────────────────
+ 
+mcp_server_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "mcp_server")
+ 
+health_server_path = os.path.join(mcp_server_dir, "mcp_health_server.py")
+recipe_server_path = os.path.join(mcp_server_dir, "mcp_recipe_server.py")
+
+# ── MCP Toolsets (Two Separate Servers) ───────────────────────────────────────
+ 
+# Server 1: Health → steps + raw food calories
+health_tools = McpToolset(
+    connection_params=StdioConnectionParams(
+        server_params=StdioServerParameters(
+            command="python",
+            args=[health_server_path],
+        ),
+        timeout=30,
+    )
+)
+ 
+# Server 2: Recipe → full recipe + ingredients + per-ingredient calories
+recipe_tools = McpToolset(
+    connection_params=StdioConnectionParams(
+        server_params=StdioServerParameters(
+            command="python",
+            args=[recipe_server_path],
+        ),timeout=60
+    )
+)
 
 root_agent = Agent(
     name="health_root_agent",
-    model="gemini-2.5-flash",
+    model=DEFAULT_MODEL,
+    description="Main health assistant that routes tasks to specialist sub-agents.",
     instruction="""
 You are a friendly Health Coach orchestrator.
 

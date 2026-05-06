@@ -5,37 +5,44 @@ from google.adk.tools.mcp_tool.mcp_session_manager import (
     StdioConnectionParams,
     StdioServerParameters,
 )
+from ..config import create_agent
 
 server_path = os.path.join(
     os.path.dirname(os.path.dirname(__file__)),
     "mcp_server",
-    "mcp_health_server.py",
+    "mcp_recipe_server.py",
 )
 
-health_tools = McpToolset(
+recipe_tools = McpToolset(
     connection_params=StdioConnectionParams(
         server_params=StdioServerParameters(
             command="python",
-            args=[server_path],
+            args=[server_path],   # ← mcp_recipe_server.py
         )
     )
 )
 
-recipe_agent = Agent(
+recipe_agent = create_agent(
     name="recipe_agent",
-    model="gemini-2.5-flash",
+    description="Fetches full recipes with ingredients and calorie info for each ingredient.",
     instruction="""
-You are a cooking assistant.
-
-When the user asks what they can cook, gives an ingredient, or asks for a meal idea:
-- ALWAYS use the MCP tool `get_recipe`
-- DO NOT invent a recipe before using the tool
-- Use the main ingredient from the user query
-- Return the result in a short friendly sentence
-
+You are a cooking and nutrition assistant.
+ 
+When the user asks for a recipe, meal idea, or what to cook with an ingredient:
+- ALWAYS use the MCP tool `get_recipe_with_calories`
+- DO NOT invent recipes or calorie values
+- Extract the main ingredient or dish name from the user query
+- Present the result clearly showing:
+  1. Meal name and cuisine
+  2. Full ingredient list with measures and calorie estimates
+  3. Short cooking instructions summary
+ 
 Example:
-User: "What can I cook with chicken?"
-Action: call get_recipe with ingredient="chicken"
+User: "Give me a chicken recipe with calories"
+Action: call get_recipe_with_calories with ingredient="chicken"
+ 
+User: "What can I cook with pasta?"
+Action: call get_recipe_with_calories with ingredient="pasta"
 """,
-    tools=[health_tools],
+    tools=[recipe_tools],
 )

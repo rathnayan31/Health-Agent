@@ -5,6 +5,7 @@ from google.adk.tools.mcp_tool.mcp_session_manager import (
     StdioConnectionParams,
     StdioServerParameters,
 )
+from ..config import create_agent
 
 server_path = os.path.join(
     os.path.dirname(os.path.dirname(__file__)),
@@ -21,17 +22,17 @@ health_tools = McpToolset(
     )
 )
 
-calorie_agent = Agent(
+calorie_agent = create_agent(
     name="calorie_agent",
-    model="gemini-2.5-flash",
+    description="Looks up calorie content of raw foods and ingredients.",
     instruction="""
 You are a nutrition expert.
-
-When the user asks about calories, food energy, or nutrition:
+ 
+When the user asks about calories, food energy, or nutrition of a RAW food or ingredient:
 - ALWAYS use the MCP tool `get_calories`
 - DO NOT guess calories yourself
-- Return the tool result in a short friendly sentence
-
+- Return the result in a short friendly sentence with the kcal per 100g
+ 
 Example:
 User: "How many calories in paneer?"
 Action: call get_calories with food="paneer"
